@@ -1,0 +1,56 @@
+# docker-compose.yml - ambiente de teste do Agente (Pessoa 1)
+# Sobe o coletor falso e 2 agentes numa rede propria com IPs fixos.
+#
+# ATENCAO: ajuste os nomes das variaveis de ambiente (COLETOR_HOST, etc.)
+# para os mesmos que o seu agente.py le. Se ele tem host/porta/token fixos
+# no codigo, troque para os.environ.get(...) ou remova o bloco environment.
+
+services:
+  coletor:
+    image: python:3.11-slim
+    container_name: coletor
+    working_dir: /app
+    volumes:
+      - ./coletor_falso.py:/app/coletor_falso.py:ro
+    command: python coletor_falso.py --porta 5000 --token segredo123
+    ports:
+      - "5000:5000"
+    networks:
+      rede_metricas:
+        ipv4_address: 172.20.0.10
+
+  agente1:
+    image: agente-metricas:latest
+    container_name: agente1
+    depends_on:
+      - coletor
+    environment:
+      COLETOR_HOST: coletor
+      COLETOR_PORT: "5000"
+      TOKEN: segredo123
+    restart: unless-stopped
+    networks:
+      rede_metricas:
+        ipv4_address: 172.20.0.11
+
+  agente2:
+    image: agente-metricas:latest
+    container_name: agente2
+    depends_on:
+      - coletor
+    environment:
+      COLETOR_HOST: coletor
+      COLETOR_PORT: "5000"
+      TOKEN: segredo123
+    restart: unless-stopped
+    networks:
+      rede_metricas:
+        ipv4_address: 172.20.0.12
+
+networks:
+  rede_metricas:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+          gateway: 172.20.0.1
