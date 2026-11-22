@@ -1,4 +1,4 @@
-"""Painel (Pessoa 3): web Flask que le /dados/dados.db SOMENTE LEITURA e mostra graficos e hosts."""
+"""Painel: web Flask que le /dados/dados.db SOMENTE LEITURA e mostra graficos e hosts."""
 import os, sqlite3, time, logging
 from datetime import datetime, timezone
 from pathlib import Path

@@ -1,5 +1,5 @@
 import socket, threading, json, sqlite3, logging, os
-HOST, PORTA = "0.0.0.0", 5000                      # porta combinada com a Pessoa 1
+HOST, PORTA = "0.0.0.0", 5000                      # porta combinada 
 TOKEN = os.environ.get("TOKEN", "TOKEN_123")       # o "crachá"
 DB_PATH = os.environ.get("DB_PATH", "dados.db")    # onde fica o "caderno"
 
