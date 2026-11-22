@@ -30,6 +30,7 @@ import socket
 import sys
 import time
 from datetime import datetime
+import random
 
 import psutil
 
@@ -67,19 +68,33 @@ def encerrar(signum, frame) -> None:
     rodando = False
 
 
+
 def coletar() -> dict:
-    """Le as metricas do sistema com psutil."""
+    """Le as metricas reais ou gera metricas simuladas para demonstracao."""
     rede = psutil.net_io_counters()
+
+    cpu = psutil.cpu_percent(interval=1)
+    memoria = psutil.virtual_memory().percent
+    disco = psutil.disk_usage("/").percent
+
+    simular = os.environ.get("SIMULAR_METRICAS", "false").lower() == "true"
+
+    if simular:
+        cpu = round(random.uniform(35, 75), 1)
+        memoria = round(random.uniform(50, 85), 1)
+        disco = round(random.uniform(40, 70), 1)
+
     return {
         "token": TOKEN,
         "host": HOST_ID,
         "timestamp": datetime.now().isoformat(timespec="seconds"),
-        "cpu": psutil.cpu_percent(interval=1),
-        "mem": psutil.virtual_memory().percent,
-        "disco": psutil.disk_usage("/").percent,
+        "cpu": cpu,
+        "mem": memoria,
+        "disco": disco,
         "rede_enviado": rede.bytes_sent,
         "rede_recebido": rede.bytes_recv,
     }
+
 
 
 def conectar() -> socket.socket:

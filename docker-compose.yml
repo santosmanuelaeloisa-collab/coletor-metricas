@@ -1,59 +1,90 @@
-# docker-compose.yml - ambiente de teste do Agente (Pessoa 1)
-# Sobe o servidor coletor (servidor.py) e 2 agentes numa rede propria com IPs fixos.
-# As variaveis de ambiente (COLETOR_HOST, COLETOR_PORT, TOKEN) sao as mesmas
-# que o agente.py le.
 
 services:
   coletor:
-    image: python:3.11-slim
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: coletor
-    working_dir: /app
-    volumes:
-      - ./servidor.py:/app/servidor.py:ro
-      - ./dados:/app/dados
+    user: "0:0"
     environment:
       TOKEN: segredo123
       PORTA: "5000"
-      DB_PATH: /app/dados/dados.db
-    command: python servidor.py
+      DB_PATH: /dados/dados.db
+    volumes:
+      - metricas_dados:/dados
     ports:
       - "5000:5000"
+    restart: unless-stopped
     networks:
-      rede_metricas:
-        ipv4_address: 172.20.0.10
+      - rede_metricas
 
-  agente1:
-    image: agente-metricas:latest
-    container_name: agente1
-    depends_on:
-      - coletor
+  agente:
+    image: python:3.12-slim
+    container_name: agente
+    working_dir: /app
+    volumes:
+      - ./agente:/app:ro
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python -u agente.py"
     environment:
       COLETOR_HOST: coletor
       COLETOR_PORT: "5000"
       TOKEN: segredo123
+      INTERVALO: "5"
+    depends_on:
+      - coletor
     restart: unless-stopped
     networks:
-      rede_metricas:
-        ipv4_address: 172.20.0.11
+      - rede_metricas
 
   agente2:
-    image: agente-metricas:latest
+    image: python:3.12-slim
     container_name: agente2
-    depends_on:
-      - coletor
+    working_dir: /app
+    volumes:
+      - ./agente:/app:ro
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && python -u agente.py"
     environment:
+      SIMULAR_METRICAS: "true"
       COLETOR_HOST: coletor
       COLETOR_PORT: "5000"
       TOKEN: segredo123
+      INTERVALO: "5"
+    depends_on:
+      - coletor
     restart: unless-stopped
     networks:
-      rede_metricas:
-        ipv4_address: 172.20.0.12
+      - rede_metricas
+
+  painel:
+    build:
+      context: ./painel
+      dockerfile: Dockerfile
+    image: painel:latest
+    container_name: painel
+    environment:
+      DB: /dados/dados.db
+    volumes:
+      - metricas_dados:/dados:ro
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  painel-poucos:
+    image: painel:latest
+    container_name: painel-poucos
+    environment:
+      DB: /dados/dados.db
+    volumes:
+      - metricas_dados:/dados:ro
+    ports:
+      - "8083:8080"
+    depends_on:
+      - painel
+    restart: unless-stopped
+
+volumes:
+  metricas_dados:
 
 networks:
   rede_metricas:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
-          gateway: 172.20.0.1

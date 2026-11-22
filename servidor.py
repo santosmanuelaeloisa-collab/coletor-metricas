@@ -12,21 +12,22 @@ CAMPOS_PERCENTUAL = ("cpu", "mem", "disco")
 CAMPOS_REDE = ("rede_enviado", "rede_recebido")
 
 
+
 def salvar(m, origem):
-    # cada thread abre o seu proprio acesso ao caderno
     db = sqlite3.connect(DB_PATH, timeout=10)
+
     db.execute("""CREATE TABLE IF NOT EXISTS metricas
-                  (origem TEXT, host TEXT, timestamp TEXT,
-                   cpu REAL, mem REAL, disco REAL,
-                   rede_enviado INTEGER, rede_recebido INTEGER,
+                  (origem TEXT, cpu REAL, memoria REAL,
                    momento TEXT DEFAULT CURRENT_TIMESTAMP)""")
-    db.execute("""INSERT INTO metricas
-                  (origem, host, timestamp, cpu, mem, disco, rede_enviado, rede_recebido)
-                  VALUES (?,?,?,?,?,?,?,?)""",
-               (origem, m["host"], m["timestamp"], m["cpu"], m["mem"], m["disco"],
-                m["rede_enviado"], m["rede_recebido"]))
+
+    db.execute(
+        "INSERT INTO metricas (origem, cpu, memoria) VALUES (?, ?, ?)",
+        (origem, m["cpu"], m["mem"])
+    )
+
     db.commit()
     db.close()
+
 
 
 def validar(m):
