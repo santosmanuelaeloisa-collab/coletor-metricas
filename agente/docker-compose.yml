@@ -1,9 +1,7 @@
 # docker-compose.yml - ambiente de teste do Agente (Pessoa 1)
-# Sobe o coletor falso e 2 agentes numa rede propria com IPs fixos.
-#
-# ATENCAO: ajuste os nomes das variaveis de ambiente (COLETOR_HOST, etc.)
-# para os mesmos que o seu agente.py le. Se ele tem host/porta/token fixos
-# no codigo, troque para os.environ.get(...) ou remova o bloco environment.
+# Sobe o servidor coletor (servidor.py) e 2 agentes numa rede propria com IPs fixos.
+# As variaveis de ambiente (COLETOR_HOST, COLETOR_PORT, TOKEN) sao as mesmas
+# que o agente.py le.
 
 services:
   coletor:
@@ -11,8 +9,13 @@ services:
     container_name: coletor
     working_dir: /app
     volumes:
-      - ./coletor_falso.py:/app/coletor_falso.py:ro
-    command: python coletor_falso.py --porta 5000 --token segredo123
+      - ./servidor.py:/app/servidor.py:ro
+      - ./dados:/app/dados
+    environment:
+      TOKEN: segredo123
+      PORTA: "5000"
+      DB_PATH: /app/dados/dados.db
+    command: python servidor.py
     ports:
       - "5000:5000"
     networks:
